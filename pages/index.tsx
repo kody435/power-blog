@@ -1,14 +1,38 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
+// frontend/pages/index.tsx
 
-const inter = Inter({ subsets: ['latin'] })
+import Link from "next/link";
+import groq from "groq";
+import client from "../client";
 
-export default function Home() {
+const Index = ({ posts }: any) => {
   return (
-      <div>
-        <p>Hello World!</p>
-      </div>
-  )
+    <div>
+      <h1>Welcome to a blog!</h1>
+      {posts.length > 0 &&
+        posts.map(
+          ({ _id, title = "", slug = "", publishedAt = "" }:any) =>
+            slug && (
+              <li key={_id}>
+                <Link href={`/post/${encodeURIComponent(slug.current)}`}>
+                  {title}
+                </Link>{" "}
+                ({new Date(publishedAt).toDateString()})
+              </li>
+            )
+        )}
+    </div>
+  );
+};
+
+export async function getStaticProps() {
+  const posts = await client.fetch(groq`
+      *[_type == "post" && publishedAt < now()] | order(publishedAt desc)
+    `);
+  return {
+    props: {
+      posts,
+    },
+  };
 }
+
+export default Index;
